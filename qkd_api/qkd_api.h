@@ -28,7 +28,13 @@ typedef struct {
     char address[IP_ADDR_MAX_LEN];
 } ip_address_t;
 
-uint32_t QKD_OPEN(ip_address_t destination, qos_t QoS, key_handle_t key_handle);
+typedef struct {
+    uint8_t length;
+    char address[IP_ADDR_MAX_LEN];
+    uint16_t port;
+} destination_t;
+
+uint32_t QKD_OPEN(destination_t dest, qos_t QoS, key_handle_t key_handle);
 
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle, uint32_t timeout);
 

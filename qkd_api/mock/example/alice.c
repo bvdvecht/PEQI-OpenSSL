@@ -9,7 +9,8 @@ int main() {
     srand(time(NULL));
 
     /* QKD_OPEN */
-    ip_address_t destination;
+    // ip_address_t destination;
+    destination_t destination;
 
     qos_t qos;
     qos.requested_length = 3;

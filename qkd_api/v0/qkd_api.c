@@ -28,8 +28,8 @@ void error(char *msg) {
     exit(1);
 }
 
-uint32_t QKD_OPEN(ip_address_t destination, qos_t qos, key_handle_t key_handle) {
-    // remote_port = destination;
+uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
+    remote_port = dest.port;
 
     return SUCCESS;
 }
