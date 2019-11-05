@@ -15,8 +15,8 @@
 #define BUFSIZE 1024
 
 #define HOSTNAME "localhost"
-#define ALICE_PORT 8001
-#define BOB_PORT 8006
+#define ALICE_PORT 8005
+#define BOB_PORT 8019
 
 qos_t current_qos;
 key_handle_t zeros_array = {0};
