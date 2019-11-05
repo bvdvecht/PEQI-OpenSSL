@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "qkd_api.h": "c",
+        "inet.h": "c",
+        "types.h": "c",
+        "socket.h": "c",
+        "netdb.h": "c"
+    }
+}
