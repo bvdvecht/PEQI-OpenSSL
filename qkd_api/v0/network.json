@@ -1,0 +1,77 @@
+{
+    "network1": {
+        "nodes": {
+            "Alice": {
+                "app_socket": [
+                    "localhost",
+                    8000
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8001
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8003
+                ]
+            },
+            "Bob": {
+                "app_socket": [
+                    "localhost",
+                    8004
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8006
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8007
+                ]
+            },
+            "Charlie": {
+                "app_socket": [
+                    "localhost",
+                    8008
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8009
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8010
+                ]
+            },
+            "David": {
+                "app_socket": [
+                    "localhost",
+                    8012
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8013
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8015
+                ]
+            },
+            "Eve": {
+                "app_socket": [
+                    "localhost",
+                    8016
+                ],
+                "cqc_socket": [
+                    "localhost",
+                    8017
+                ],
+                "vnode_socket": [
+                    "localhost",
+                    8018
+                ]
+            }
+        },
+        "topology": null
+    }
+}

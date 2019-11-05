@@ -1,9 +1,10 @@
 #include "qkd_api.h"
+#include "../defines.h"
 
 int main()
 {
     destination_t dest;
-    dest.port = 8019;
+    dest.port = BOB_PORT;
     
     qos_t qos;
     key_handle_t handle;

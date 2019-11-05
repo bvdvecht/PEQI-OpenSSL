@@ -11,12 +11,9 @@
 
 #include "qkd_api.h"
 #include "cqc.h"
+#include "defines.h"
 
 #define BUFSIZE 1024
-
-#define HOSTNAME "localhost"
-#define ALICE_PORT 8005
-#define BOB_PORT 8019
 
 qos_t current_qos;
 key_handle_t zeros_array = {0};
