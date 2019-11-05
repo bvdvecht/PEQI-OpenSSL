@@ -19,6 +19,7 @@ qos_t current_qos;
 key_handle_t zeros_array = {0};
 
 uint16_t remote_port;
+uint32_t requested_length;
 
 void error(char *msg) {
     perror(msg);
@@ -27,6 +28,7 @@ void error(char *msg) {
 
 uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
     remote_port = dest.port;
+    requested_length = qos.requested_length;
 
     return SUCCESS;
 }
@@ -46,7 +48,9 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
 
     if (remote_port == BOB_PORT) // we are Alice
     {
-        cqc_connect(cqc, HOSTNAME, ALICE_PORT);
+        if (cqc_connect(cqc, HOSTNAME, ALICE_PORT) != CQC_LIB_OK)
+            return;
+        
         printf("Connected.\n");
 
         struct hostent* server = gethostbyname(HOSTNAME);
@@ -55,11 +59,15 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
 
         uint16_t qubit;
         entanglementHeader ent_info;
-        cqc_epr(cqc, 10, BOB_PORT, remote_node, &qubit, &ent_info);
+        if (cqc_epr(cqc, 10, BOB_PORT, remote_node, &qubit, &ent_info) != CQC_LIB_OK)
+            return;
+        
         printf("Created EPR.\n");
 
         uint8_t outcome;
-        cqc_measure(cqc, qubit, &outcome);
+        if (cqc_measure(cqc, qubit, &outcome) != CQC_LIB_ERR)
+            return;
+        
         printf("Measured qubit.\n");
 
         cqc_close(cqc);
@@ -69,16 +77,22 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
     }
     else // we are Bob
     {
-        cqc_connect(cqc, HOSTNAME, BOB_PORT);
+        if (cqc_connect(cqc, HOSTNAME, BOB_PORT) != CQC_LIB_ERR)
+            return;
+        
         printf("Connected.\n");
 
         uint16_t qubit;
         entanglementHeader ent_info;
-        cqc_epr_recv(cqc, &qubit, &ent_info);
+        if (cqc_epr_recv(cqc, &qubit, &ent_info) != CQC_LIB_ERR)
+            return;
+        
         printf("Received EPR.\n");
 
         uint8_t outcome;
-        cqc_measure(cqc, qubit, &outcome);
+        if (cqc_measure(cqc, qubit, &outcome) != CQC_LIB_ERR)
+            return;
+        
         printf("Measured qubit.\n");
 
         cqc_close(cqc);
