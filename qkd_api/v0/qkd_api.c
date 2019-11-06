@@ -29,7 +29,7 @@ dict_t *connections;
 key_handle_t zeros_array = {0};
 
 cqc_ctx* cqc;
-
+int is_alice = false;
 
 int dict_find_index(dict_t *dict, key_handle_t *key) {
     for (int i = 0; i < dict->len; i++) {
@@ -100,19 +100,23 @@ connection_t* search_handle(key_handle_t key_handle) {
 
 uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
     remote_port = dest.port;
-    printf("afhshefb remote port: %d\n", remote_port);
     requested_length = qos.requested_length;
+
+    is_alice = remote_port == BOB_PORT;
     
     if (memcmp(zeros_array, key_handle, KEY_HANDLE_SIZE) == 0) {
-        printf("rtoiyrtfb\n");
-        
+        //is_alice = true;
+        printf("null handle");
+       
         //TODO we can get rid of this as we have our dict
         
     
         //init_key_handle(&key_handle);
-        for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
-            key_handle[i] = (char) (rand() % 256);
-        }
+
+        // for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
+        //     key_handle[i] = (char) (rand() % 256);
+        // }
+        key_handle = "awesome_handle";
 
         if(connections == NULL) {
             connections = dict_new();
@@ -123,6 +127,8 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
         return SUCCESS;
 
     } else {
+        printf("handle not null");
+        //is_alice = false;
         connection_t *existing = search_handle(key_handle);
         if (existing == NULL) {
             connection_t conn = { .qos = qos, .dest = dest};
@@ -204,13 +210,13 @@ uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
 
 
 uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
-    // cqc_ctx* cqc = cqc_init(10);
-
     printf("remote port: %d\n", remote_port);
 
-    if (remote_port == BOB_PORT) // we are Alice
+    // if (remote_port == BOB_PORT) // we are Alice
+    if (is_alice)
     {
-        printf("trying ot connect\n");
+        printf("I'm Alice\n");
+        printf("trying to connect\n");
         if (cqc_connect(cqc, HOSTNAME, ALICE_PORT) != CQC_LIB_OK) {
             printf("connecting failed\n");
             return 0;
@@ -219,12 +225,10 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
         printf("Connected.\n");
 
         struct hostent* server = gethostbyname(HOSTNAME);
-        uint32_t remote_node = ntohl(*((uint32_t *)server->h_addr_list[0]));
+        uint32_t remote_node = ntohl(*((uint32_t *)server->h_addr_list[0]));        
 
-        
-
-        uint16_t qubits[100];
-        uint8_t outcomes[100];
+        uint16_t qubits[BUFSIZE];
+        uint8_t outcomes[BUFSIZE];
         entanglementHeader ent_info;
         for (int i = 0; i < requested_length; i++)
         {
@@ -234,9 +238,14 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
             if (cqc_measure(cqc, qubits[i], &outcomes[i]) != CQC_LIB_OK)
                 return 0;
 
-            printf("waiting for Bob to confirm recv\n");
-            wait_for_classical(own_socket, CLASS_MSG_HELLO);
-            printf("confirmation received\n");
+            
+            if (i % 10 == 0)
+            {
+                printf("measured %d EPR halfs\n", i);
+                // printf("waiting for Bob to confirm recv\n");
+                wait_for_classical(own_socket, CLASS_MSG_HELLO);
+                // printf("confirmation received\n");
+            }
         }
         
         printf("Sent all EPRs and measured own half.\n");
@@ -254,13 +263,14 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
     }
     else // we are Bob
     {
+        printf("I'm Bob\n");
         if (cqc_connect(cqc, HOSTNAME, BOB_PORT) != CQC_LIB_OK)
             return 0;
         
         printf("Connected.\n");
 
-        uint16_t qubits[100];
-        uint8_t outcomes[100];
+        uint16_t qubits[BUFSIZE];
+        uint8_t outcomes[BUFSIZE];
         entanglementHeader ent_info;
         for (int i = 0; i < requested_length; i++)
         {
@@ -270,9 +280,12 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
             if (cqc_measure(cqc, qubits[i], &outcomes[i]) != CQC_LIB_OK)
                 return 0;
 
-            setup_classical_client("localhost", ALICE_CLASS_PORT, &remote_socket);
-            printf("sending classical message\n");
-            send_classical(remote_socket, CLASS_MSG_HELLO);
+            if (i % 10 == 0)
+            {
+                setup_classical_client("localhost", ALICE_CLASS_PORT, &remote_socket);
+                // printf("sending classical message\n");
+                send_classical(remote_socket, CLASS_MSG_HELLO);
+            }            
         }
         
         printf("Received all EPRs and measured all.\n");
