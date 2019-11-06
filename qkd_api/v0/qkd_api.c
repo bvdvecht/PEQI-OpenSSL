@@ -22,29 +22,74 @@ uint32_t requested_length;
 socket_info own_socket;
 socket_info remote_socket;
 
+dict_t *connections;
 
-bool search_handle(key_handle_t key_handle) {
-    return false;
+/*
+* searches for an existing key_handle
+* will initialize connections if currently NULL
+* return true iff key_handle exists
+*/
+connection_t* search_handle(key_handle_t key_handle) {
+    if(connections == NULL) {
+        //create new connections dict
+        connections = dict_new();
+        return NULL;
+    } else {
+        return dict_find(connections, &key_handle);
+    }
+}
+
+void init_key_handle(key_handle_t *key_handle) {
+    for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
+            *key_handle[i] = (char) (rand() % 256);
+        }
 }
 
 uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
-    remote_port = dest.port;
-    requested_length = qos.requested_length;
-
-    if (search_handle(key_handle)) {
-        return QKD_OPEN_FAILED;
-    }
-
     if (key_handle == NULL) {
-        for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
-            key_handle[i] = (char) (rand() % 256);
+
+        //TODO we can get rid of this as we have our dict
+        remote_port = dest.port;
+        requested_length = qos.requested_length;
+    
+        init_key_handle(&key_handle);
+
+        if(connections == NULL) {
+            connections = dict_new();
+        }
+        
+        connection_t conn = { .qos = qos, .dest = dest};
+        dict_add(connections, key_handle, &conn);
+        return SUCCESS;
+
+    } else {
+        connection_t *existing = search_handle(key_handle);
+        if (existing == NULL) {
+            connection_t conn = { .qos = qos, .dest = dest};
+            dict_add(connections, key_handle, &conn);
+            return SUCCESS;
+        } else {
+            if(existing->dest.address == dest.address
+              && existing->dest.length == dest.length
+              && existing->dest.port == dest.port
+              && existing->qos.max_bps == qos.max_bps
+              && existing->qos.priority == qos.priority
+              && existing->qos.requested_length == qos.requested_length
+              && existing->qos.timeout == qos.timeout) {
+                return SUCCESS;
+            } else {
+                return QKD_OPEN_FAILED;
+            }
         }
     }
-
-    return SUCCESS;
 }
 
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle, uint32_t timeout) {
+    cqc_ctx* cqc = cqc_init(10);
+    if (!cqc_connect(cqc, HOSTNAME, ALICE_PORT) != CQC_LIB_OK) {
+        return NO_QKD_CONNECTION;
+    }
+    
     if (remote_port == BOB_PORT) // we are Alice
     {
         setup_classical_server("localhost", ALICE_CLASS_PORT, &own_socket);
@@ -60,6 +105,14 @@ uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle, uint32_t timeout) {
 }
 
 uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
+    cqc_ctx* cqc = cqc_init(10);
+    for(int t=0; t < timeout/10; t++) {
+        if (!cqc_connect(cqc, HOSTNAME, ALICE_PORT) != CQC_LIB_OK) {
+            return NO_QKD_CONNECTION;
+        }
+        sleep(10);
+    }
+    
     if (remote_port == BOB_PORT) // we are Alice
     {
         setup_classical_server("localhost", ALICE_CLASS_PORT, &own_socket);
