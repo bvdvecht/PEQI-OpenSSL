@@ -14,6 +14,7 @@
 #include "defines.h"
 
 #define BUFSIZE 1024
+#define APPLICATION_ID 10
 
 qos_t current_qos;
 key_handle_t zeros_array = {0};
@@ -89,17 +90,29 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
 }
 
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
-    cqc_ctx* cqc = cqc_init(10);
-    if (cqc_connect(cqc, HOSTNAME, ALICE_PORT) != CQC_LIB_OK) {
+    connection_t *conn = search_handle(key_handle);
+    
+    if(conn == NULL) {
+        return NO_QKD_CONNECTION;
+    }
+
+    cqc_ctx* cqc = cqc_init(APPLICATION_ID);
+    if (cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
         return SUCCESS;
     }
     return NO_QKD_CONNECTION;
 }
 
 uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
-    cqc_ctx* cqc = cqc_init(10);
+    connection_t *conn = search_handle(key_handle);
+
+    if(conn == NULL) {
+        return NO_QKD_CONNECTION;
+    }
+
+    cqc_ctx* cqc = cqc_init(APPLICATION_ID);
     for(int t=0; t < timeout/10; t++) {
-        if (cqc_connect(cqc, HOSTNAME, ALICE_PORT) != CQC_LIB_OK) {
+        if (cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
             return SUCCESS;
         }
         sleep(10);
