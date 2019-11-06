@@ -33,7 +33,9 @@ int is_alice = false;
 
 int dict_find_index(dict_t *dict, key_handle_t key) {
     for (int i = 0; i < dict->len; i++) {       
+        printf("%d, %d, %d\n", dict->entry[i].key[0], dict->entry[i].key[1], dict->entry[i].key[2]);
         if (memcmp(key, dict->entry[i].key, KEY_HANDLE_SIZE) == 0) {
+            printf("yes\n");
             return i;
         }
     }
@@ -105,18 +107,21 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
         }
 
         if(connections == NULL) {
+            printf("conn null\n");
             connections = dict_new();
+            cqc = cqc_init(APPLICATION_ID);
         }
         
-        connection_t conn = { .qos = qos, .dest = dest};
+        connection_t conn = { .qos = qos, .dest = dest };
         dict_add(connections, key_handle, &conn);
         return SUCCESS;
 
     } else {
-        printf("handle not null");
+        printf("handle not null\n");
         //is_alice = false;
         connection_t *existing = search_handle(key_handle);
         if (existing == NULL) {
+            printf("existing\n");
             connection_t conn = { .qos = qos, .dest = dest};
             dict_add(connections, key_handle, &conn);
             return SUCCESS;
@@ -140,10 +145,12 @@ uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
     connection_t *conn = search_handle(key_handle);
 
     if(conn == NULL) {
+        printf("conn == NULL\n");
         return NO_QKD_CONNECTION;
     }
 
     if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+        printf("!cqc_conn\n");
         return NO_QKD_CONNECTION;
     }
     
@@ -163,11 +170,13 @@ uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
     connection_t *conn = search_handle(key_handle);
 
     if(conn == NULL) {
+        printf("conn == NULL\n");
         return NO_QKD_CONNECTION;
     }
 
     for(int t=0; t < timeout/10; t++) {
         if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+            printf("!cqc_conn\n");
             return NO_QKD_CONNECTION;
         }
         sleep(10);
