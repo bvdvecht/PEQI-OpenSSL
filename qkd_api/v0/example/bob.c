@@ -3,8 +3,7 @@
 
 int main()
 {
-    destination_t dest;
-    dest.port = ALICE_PORT;
+    ip_address_t dest;
     
     qos_t qos;
     qos.requested_length = REQUESTED_LENGTH;

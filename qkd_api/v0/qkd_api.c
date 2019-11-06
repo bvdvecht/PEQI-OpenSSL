@@ -94,7 +94,7 @@ connection_t* search_handle(key_handle_t key_handle) {
     }
 }
 
-uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
+uint32_t QKD_OPEN(ip_address_t dest, qos_t qos, key_handle_t key_handle) {
     //TODO we can get rid of this as we have our dict
     //remote_port = dest.port;
     requested_length = qos.requested_length;
@@ -107,7 +107,6 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
         }
 
         if(connections == NULL) {
-            printf("conn null\n");
             connections = dict_new();
             cqc = cqc_init(APPLICATION_ID);
         }
@@ -117,19 +116,16 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
         return SUCCESS;
 
     } else {
-        printf("handle not null\n");
         is_alice = false;
         remote_port = ALICE_PORT;
         connection_t *existing = search_handle(key_handle);
         if (existing == NULL) {
-            printf("existing\n");
             connection_t conn = { .qos = qos, .dest = dest};
             dict_add(connections, key_handle, &conn);
             return SUCCESS;
         } else {
             if(existing->dest.address == dest.address
               && existing->dest.length == dest.length
-              && existing->dest.port == dest.port
               && existing->qos.max_bps == qos.max_bps
               && existing->qos.priority == qos.priority
               && existing->qos.requested_length == qos.requested_length
@@ -145,12 +141,14 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
     connection_t *conn = search_handle(key_handle);
 
+    uint16_t own_port = is_alice ? ALICE_PORT : BOB_PORT;
+
     if(conn == NULL) {
         printf("conn == NULL\n");
         return NO_QKD_CONNECTION;
     }
 
-    if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+    if (!cqc_connect(cqc, conn->dest.address, own_port) != CQC_LIB_OK) {
         printf("!cqc_conn\n");
         return NO_QKD_CONNECTION;
     }
@@ -170,13 +168,15 @@ uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
 uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
     connection_t *conn = search_handle(key_handle);
 
+    uint16_t own_port = is_alice ? ALICE_PORT : BOB_PORT;
+
     if(conn == NULL) {
         printf("conn == NULL\n");
         return NO_QKD_CONNECTION;
     }
 
     for(int t=0; t < timeout/10; t++) {
-        if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+        if (!cqc_connect(cqc, conn->dest.address, own_port) != CQC_LIB_OK) {
             printf("!cqc_conn\n");
             return NO_QKD_CONNECTION;
         }
@@ -188,17 +188,17 @@ uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
         setup_classical_server("localhost", ALICE_CLASS_PORT, &own_socket);
         setup_classical_client("localhost", BOB_CLASS_PORT, &remote_socket);
 
-        printf("waiting for classical msg\n");
-        wait_for_classical(own_socket, CLASS_MSG_HELLO);
-        printf("classical msg received\n");
+        // printf("waiting for classical msg\n");
+        // wait_for_classical(own_socket, CLASS_MSG_HELLO);
+        // printf("classical msg received\n");
     }
     else // we are Bob
     {
         setup_classical_server("localhost", BOB_CLASS_PORT, &own_socket);
         setup_classical_client("localhost", ALICE_CLASS_PORT, &remote_socket);
 
-        printf("sending classical msg\n");
-        send_classical(remote_socket, CLASS_MSG_HELLO);
+        // printf("sending classical msg\n");
+        // send_classical(remote_socket, CLASS_MSG_HELLO);
     }
 
     return SUCCESS;

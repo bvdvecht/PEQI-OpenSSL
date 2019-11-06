@@ -2,7 +2,7 @@
 #define ALICE_PORT 8001
 #define BOB_PORT 8006
 
-#define REQUESTED_LENGTH 10
+#define REQUESTED_LENGTH 40
 #define MAX_QUBITS 10
 
 #define ALICE_CLASS_PORT "8080"

@@ -37,7 +37,7 @@ typedef struct {
 
 typedef struct {
     qos_t qos;
-    destination_t dest;
+    ip_address_t dest;
     cqc_ctx *cqc;
 } connection_t;
 
@@ -52,7 +52,7 @@ typedef struct {
     dict_entry_t *entry;
 } dict_t;
 
-uint32_t QKD_OPEN(destination_t dest, qos_t QoS, key_handle_t key_handle);
+uint32_t QKD_OPEN(ip_address_t dest, qos_t QoS, key_handle_t key_handle);
 
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle);
 
