@@ -1,6 +1,9 @@
 #include "qkd_api.h"
 #include "../defines.h"
 
+
+// key_handle_t handle = {0};
+
 int main()
 {
     destination_t dest;
