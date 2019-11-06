@@ -147,13 +147,13 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
     connection_t *conn = search_handle(key_handle);
 
-    if(conn == NULL) {
-        return NO_QKD_CONNECTION;
-    }
+    // if(conn == NULL) {
+    //     return NO_QKD_CONNECTION;
+    // }
 
-    if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
-        return NO_QKD_CONNECTION;
-    }
+    // if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+    //     return NO_QKD_CONNECTION;
+    // }
     
     if (remote_port == BOB_PORT) // we are Alice
     {
@@ -170,16 +170,16 @@ uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
 uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
     connection_t *conn = search_handle(key_handle);
 
-    if(conn == NULL) {
-        return NO_QKD_CONNECTION;
-    }
+    // if(conn == NULL) {
+    //     return NO_QKD_CONNECTION;
+    // }
 
-    for(int t=0; t < timeout/10; t++) {
-        if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
-            return NO_QKD_CONNECTION;
-        }
-        sleep(10);
-    }
+    // for(int t=0; t < timeout/10; t++) {
+    //     if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+    //         return NO_QKD_CONNECTION;
+    //     }
+    //     sleep(10);
+    // }
     
     if (remote_port == BOB_PORT) // we are Alice
     {
