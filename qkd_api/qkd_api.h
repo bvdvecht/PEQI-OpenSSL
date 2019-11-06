@@ -2,6 +2,7 @@
 #define QKD_API_H
 
 #include <stdint.h>
+#include "cqc.h"
 
 #define KEY_HANDLE_SIZE 64
 #define IP_ADDR_MAX_LEN 16
@@ -33,6 +34,69 @@ typedef struct {
     char address[IP_ADDR_MAX_LEN];
     uint16_t port;
 } destination_t;
+
+typedef struct {
+    const key_handle_t key;
+    qos_t qos;
+    destination_t dest;
+    cqc_ctx *cqc;
+} connection_t;
+
+typedef struct {
+    key_handle_t *key;
+    connection_t *conn;
+} dict_entry_t;
+
+typedef struct {
+    int len;
+    int cap;
+    dict_entry_t *entry;
+} dict_t;
+
+int dict_find_index(dict_t *dict, key_handle_t *key) {
+    for (int i = 0; i < dict->len; i++) {
+        if (!strcmp(dict->entry[i].key, key)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+connection_t* dict_find(dict_t *dict, key_handle_t *key) {
+    int idx = dict_find_index(dict, key);
+    return idx == -1 ? NULL : dict->entry[idx].conn;
+}
+
+void dict_add(dict_t *dict, const key_handle_t key, connection_t *conn) {
+   int idx = dict_find_index(dict, key);
+   if (idx != -1) {
+       dict->entry[idx].key = key;
+       dict->entry[idx].conn = conn;
+       return;
+   }
+   if (dict->len == dict->cap) {
+       dict->cap *= 2;
+       dict->entry = realloc(dict->entry, dict->cap * sizeof(connection_t));
+   }
+   dict->entry[dict->len].key = key;
+   dict->entry[dict->len].conn = conn;
+   dict->len++;
+}
+
+dict_t *dict_new(void) {
+    dict_t proto = {0, 10, malloc(10 * sizeof(dict_entry_t))};
+    dict_t *d = malloc(sizeof(dict_t));
+    *d = proto;
+    return d;
+}
+
+void dict_free(dict_t *dict) {
+    for (int i = 0; i < dict->len; i++) {
+        free(dict->entry[i].key);
+    }
+    free(dict->entry);
+    free(dict);
+}
 
 uint32_t QKD_OPEN(destination_t dest, qos_t QoS, key_handle_t key_handle);
 
