@@ -26,9 +26,23 @@ void error(char *msg) {
     exit(1);
 }
 
+bool search_handle(key_handle_t key_handle) {
+    return false;
+}
+
 uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
     remote_port = dest.port;
     requested_length = qos.requested_length;
+
+    if (search_handle(key_handle)) {
+        return QKD_OPEN_FAILED;
+    }
+
+    if (key_handle == NULL) {
+        for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
+            key_handle[i] = (char) (rand() % 256);
+        }
+    }
 
     return SUCCESS;
 }
@@ -49,24 +63,23 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
     if (remote_port == BOB_PORT) // we are Alice
     {
         if (cqc_connect(cqc, HOSTNAME, ALICE_PORT) != CQC_LIB_OK)
-            return;
+            return 0;
         
         printf("Connected.\n");
 
         struct hostent* server = gethostbyname(HOSTNAME);
-        printf("server: %d\n", server);
         uint32_t remote_node = ntohl(*((uint32_t *)server->h_addr_list[0]));
 
         uint16_t qubit;
         entanglementHeader ent_info;
         if (cqc_epr(cqc, 10, BOB_PORT, remote_node, &qubit, &ent_info) != CQC_LIB_OK)
-            return;
+            return 0;
         
         printf("Created EPR.\n");
 
         uint8_t outcome;
-        if (cqc_measure(cqc, qubit, &outcome) != CQC_LIB_ERR)
-            return;
+        if (cqc_measure(cqc, qubit, &outcome) != CQC_LIB_OK)
+            return 0;
         
         printf("Measured qubit.\n");
 
@@ -77,21 +90,21 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
     }
     else // we are Bob
     {
-        if (cqc_connect(cqc, HOSTNAME, BOB_PORT) != CQC_LIB_ERR)
-            return;
+        if (cqc_connect(cqc, HOSTNAME, BOB_PORT) != CQC_LIB_OK)
+            return 0;
         
         printf("Connected.\n");
 
         uint16_t qubit;
         entanglementHeader ent_info;
-        if (cqc_epr_recv(cqc, &qubit, &ent_info) != CQC_LIB_ERR)
-            return;
+        if (cqc_epr_recv(cqc, &qubit, &ent_info) != CQC_LIB_OK)
+            return 0;
         
         printf("Received EPR.\n");
 
         uint8_t outcome;
-        if (cqc_measure(cqc, qubit, &outcome) != CQC_LIB_ERR)
-            return;
+        if (cqc_measure(cqc, qubit, &outcome) != CQC_LIB_OK)
+            return 0;
         
         printf("Measured qubit.\n");
 
