@@ -42,7 +42,7 @@ typedef struct {
 } connection_t;
 
 typedef struct {
-    key_handle_t *key;
+    key_handle_t key;
     connection_t *conn;
 } dict_entry_t;
 
