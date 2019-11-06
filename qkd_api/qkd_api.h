@@ -44,4 +44,9 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char *key_buffer);
 
 uint32_t QKD_CLOSE(key_handle_t key_handle);
 
+void setup_classical_server(char* hostname, char* portname);
+void setup_remote_server(char* hostname, char* portname);
+int wait_for_classical(char msg);
+int send_classical(char msg);
+
 #endif
