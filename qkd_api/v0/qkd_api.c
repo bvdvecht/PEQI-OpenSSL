@@ -96,12 +96,12 @@ connection_t* search_handle(key_handle_t key_handle) {
 
 uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
     //TODO we can get rid of this as we have our dict
-    remote_port = dest.port;
+    //remote_port = dest.port;
     requested_length = qos.requested_length;
 
-    is_alice = remote_port == BOB_PORT;
-    
     if (memcmp(zeros_array, key_handle, KEY_HANDLE_SIZE) == 0) {
+        is_alice = true;
+        remote_port = BOB_PORT;
         for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
             key_handle[i] = (char) (rand() % 256);
         }
@@ -118,7 +118,8 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
 
     } else {
         printf("handle not null\n");
-        //is_alice = false;
+        is_alice = false;
+        remote_port = ALICE_PORT;
         connection_t *existing = search_handle(key_handle);
         if (existing == NULL) {
             printf("existing\n");
@@ -154,7 +155,7 @@ uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
         return NO_QKD_CONNECTION;
     }
     
-    if (remote_port == BOB_PORT) // we are Alice
+    if (is_alice) // we are Alice
     {
         setup_classical_server("localhost", ALICE_CLASS_PORT, &own_socket);
         setup_classical_client("localhost", BOB_CLASS_PORT, &remote_socket);
@@ -182,7 +183,7 @@ uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
         sleep(10);
     }
     
-    if (remote_port == BOB_PORT) // we are Alice
+    if (is_alice) // we are Alice
     {
         setup_classical_server("localhost", ALICE_CLASS_PORT, &own_socket);
         setup_classical_client("localhost", BOB_CLASS_PORT, &remote_socket);
@@ -207,7 +208,6 @@ uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
 uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
     printf("remote port: %d\n", remote_port);
 
-    // if (remote_port == BOB_PORT) // we are Alice
     if (is_alice)
     {
         printf("I'm Alice\n");
@@ -227,7 +227,7 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
         entanglementHeader ent_info;
         for (int i = 0; i < requested_length; i++)
         {
-            if (cqc_epr(cqc, 10, BOB_PORT, remote_node, &qubits[i], &ent_info) != CQC_LIB_OK)
+            if (cqc_epr(cqc, 10, remote_port, remote_node, &qubits[i], &ent_info) != CQC_LIB_OK)
                 return 0;
 
             if (cqc_measure(cqc, qubits[i], &outcomes[i]) != CQC_LIB_OK)

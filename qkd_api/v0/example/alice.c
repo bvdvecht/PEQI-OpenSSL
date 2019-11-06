@@ -2,7 +2,7 @@
 #include "../defines.h"
 
 
-//key_handle_t handle = {0};
+key_handle_t handle = {0};
 
 int main()
 {
@@ -11,7 +11,7 @@ int main()
     
     qos_t qos;
     qos.requested_length = REQUESTED_LENGTH;
-    key_handle_t handle;
+    // key_handle_t handle;
     printf("srhlghf\n");
     printf("%d\n", handle[0]);
     QKD_OPEN(dest, qos, handle);
