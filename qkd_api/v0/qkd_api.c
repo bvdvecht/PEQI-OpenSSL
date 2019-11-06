@@ -31,16 +31,16 @@ key_handle_t zeros_array = {0};
 cqc_ctx* cqc;
 int is_alice = false;
 
-int dict_find_index(dict_t *dict, key_handle_t *key) {
-    for (int i = 0; i < dict->len; i++) {
-        if (!strcmp(dict->entry[i].key, *key)) {
+int dict_find_index(dict_t *dict, key_handle_t key) {
+    for (int i = 0; i < dict->len; i++) {       
+        if (memcmp(key, dict->entry[i].key, KEY_HANDLE_SIZE) == 0) {
             return i;
         }
     }
     return -1;
 }
 
-connection_t* dict_find(dict_t *dict, key_handle_t *key) {
+connection_t* dict_find(dict_t *dict, key_handle_t key) {
     int idx = dict_find_index(dict, key);
     return idx == -1 ? 0 : dict->entry[idx].conn;
 }
@@ -48,7 +48,7 @@ connection_t* dict_find(dict_t *dict, key_handle_t *key) {
 void dict_add(dict_t *dict, const key_handle_t key, connection_t *conn) {
    int idx = dict_find_index(dict, key);
    if (idx != -1) {
-       dict->entry[idx].key = key;
+       memcpy(dict->entry[idx].key, key, KEY_HANDLE_SIZE);
        dict->entry[idx].conn = conn;
        return;
    }
@@ -56,7 +56,7 @@ void dict_add(dict_t *dict, const key_handle_t key, connection_t *conn) {
        dict->cap *= 2;
        dict->entry = realloc(dict->entry, dict->cap * sizeof(connection_t));
    }
-   dict->entry[dict->len].key = key;
+   memcpy(dict->entry[dict->len].key, key, KEY_HANDLE_SIZE);
    dict->entry[dict->len].conn = conn;
    dict->len++;
 }
@@ -88,35 +88,21 @@ connection_t* search_handle(key_handle_t key_handle) {
         cqc = cqc_init(APPLICATION_ID);
         return NULL;
     } else {
-        return dict_find(connections, &key_handle);
+        return dict_find(connections, key_handle);
     }
 }
 
-// void init_key_handle(key_handle_t *key_handle) {
-//     for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
-//         *key_handle[i] = (char) (rand() % 256);
-//     }
-// }
-
 uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
+    //TODO we can get rid of this as we have our dict
     remote_port = dest.port;
     requested_length = qos.requested_length;
 
     is_alice = remote_port == BOB_PORT;
     
     if (memcmp(zeros_array, key_handle, KEY_HANDLE_SIZE) == 0) {
-        //is_alice = true;
-        printf("null handle");
-       
-        //TODO we can get rid of this as we have our dict
-        
-    
-        //init_key_handle(&key_handle);
-
-        // for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
-        //     key_handle[i] = (char) (rand() % 256);
-        // }
-        key_handle = "awesome_handle";
+        for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
+            key_handle[i] = (char) (rand() % 256);
+        }
 
         if(connections == NULL) {
             connections = dict_new();
@@ -153,13 +139,13 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
     connection_t *conn = search_handle(key_handle);
 
-    // if(conn == NULL) {
-    //     return NO_QKD_CONNECTION;
-    // }
+    if(conn == NULL) {
+        return NO_QKD_CONNECTION;
+    }
 
-    // if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
-    //     return NO_QKD_CONNECTION;
-    // }
+    if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+        return NO_QKD_CONNECTION;
+    }
     
     if (remote_port == BOB_PORT) // we are Alice
     {
@@ -176,16 +162,16 @@ uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
 uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
     connection_t *conn = search_handle(key_handle);
 
-    // if(conn == NULL) {
-    //     return NO_QKD_CONNECTION;
-    // }
+    if(conn == NULL) {
+        return NO_QKD_CONNECTION;
+    }
 
-    // for(int t=0; t < timeout/10; t++) {
-    //     if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
-    //         return NO_QKD_CONNECTION;
-    //     }
-    //     sleep(10);
-    // }
+    for(int t=0; t < timeout/10; t++) {
+        if (!cqc_connect(cqc, conn->dest.address, conn->dest.port) != CQC_LIB_OK) {
+            return NO_QKD_CONNECTION;
+        }
+        sleep(10);
+    }
     
     if (remote_port == BOB_PORT) // we are Alice
     {
