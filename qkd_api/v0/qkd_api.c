@@ -16,7 +16,6 @@
 #define BUFSIZE 1024
 
 qos_t current_qos;
-key_handle_t zeros_array = {0};
 
 uint16_t remote_port;
 uint32_t requested_length;
@@ -76,7 +75,7 @@ uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
         setup_remote_server("localhost", BOB_CLASS_PORT);
 
         printf("waiting for classical msg\n");
-        wait_for_classical(1);
+        wait_for_classical(CLASS_MSG_HELLO);
         printf("classical msg received\n");
     }
     else // we are Bob
@@ -85,7 +84,7 @@ uint32_t QKD_CONNECT_BLOCKING(key_handle_t key_handle, uint32_t timeout) {
         setup_remote_server("localhost", ALICE_CLASS_PORT);
 
         printf("sending classical msg\n");
-        send_classical(1);
+        send_classical(CLASS_MSG_HELLO);
     }
 
     return SUCCESS;
@@ -172,12 +171,14 @@ int send_classical(char msg)
     if (connect(remote_socket, remote_addr_info->ai_addr, remote_addr_info->ai_addrlen) < 0) {
         error("ERROR connecting");
     }
-
+    
     char m = msg;
     int n = write(remote_socket, &m, 1);
     if (n < 0) {
         error("ERROR writing to socket");
     }
+
+    // close(remote_socket);
 }
 
 uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
@@ -204,10 +205,14 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
                 return 0;
 
             if (cqc_measure(cqc, qubits[i], &outcomes[i]) != CQC_LIB_OK)
-                return 0;            
+                return 0;
+
+            printf("waiting for Bob to confirm recv\n");
+            wait_for_classical(CLASS_MSG_HELLO);       
+            printf("confirmation received\n");
         }
         
-        printf("Sent EPR and measured own half.\n");
+        printf("Sent all EPRs and measured own half.\n");
 
         cqc_close(cqc);
         cqc_destroy(cqc);
@@ -227,23 +232,22 @@ uint32_t QKD_GET_KEY(key_handle_t key_handle, char* key_buffer) {
         printf("Connected.\n");
 
         uint16_t qubits[100];
+        uint8_t outcomes[100];
         entanglementHeader ent_info;
         for (int i = 0; i < requested_length; i++)
         {
             if (cqc_epr_recv(cqc, &qubits[i], &ent_info) != CQC_LIB_OK)
                 return 0;
-        }
-        
-        printf("Received EPR.\n");
 
-        uint8_t outcomes[100];
-        for (int i = 0; i < requested_length; i++)
-        {
             if (cqc_measure(cqc, qubits[i], &outcomes[i]) != CQC_LIB_OK)
                 return 0;
+
+            setup_remote_server("localhost", ALICE_CLASS_PORT);
+            printf("sending classical message\n");
+            send_classical(CLASS_MSG_HELLO);
         }
         
-        printf("Measured qubits.\n");
+        printf("Received all EPRs and measured all.\n");
 
         cqc_close(cqc);
         cqc_destroy(cqc);
