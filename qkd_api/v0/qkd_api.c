@@ -29,6 +29,52 @@ void error(char *msg) {
     exit(1);
 }
 
+
+int dict_find_index(dict_t *dict, key_handle_t *key) {
+    for (int i = 0; i < dict->len; i++) {
+        if (!strcmp(dict->entry[i].key, *key)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+connection_t* dict_find(dict_t *dict, key_handle_t *key) {
+    int idx = dict_find_index(dict, key);
+    return idx == -1 ? 0 : dict->entry[idx].conn;
+}
+
+void dict_add(dict_t *dict, const key_handle_t key, connection_t *conn) {
+   int idx = dict_find_index(dict, key);
+   if (idx != -1) {
+       dict->entry[idx].key = key;
+       dict->entry[idx].conn = conn;
+       return;
+   }
+   if (dict->len == dict->cap) {
+       dict->cap *= 2;
+       dict->entry = realloc(dict->entry, dict->cap * sizeof(connection_t));
+   }
+   dict->entry[dict->len].key = key;
+   dict->entry[dict->len].conn = conn;
+   dict->len++;
+}
+
+dict_t *dict_new(void) {
+    dict_t proto = {0, 10, malloc(10 * sizeof(dict_entry_t))};
+    dict_t *d = malloc(sizeof(dict_t));
+    *d = proto;
+    return d;
+}
+
+void dict_free(dict_t *dict) {
+    for (int i = 0; i < dict->len; i++) {
+        free(dict->entry[i].key);
+    }
+    free(dict->entry);
+    free(dict);
+}
+
 /*
 * searches for an existing key_handle
 * will initialize connections if currently NULL
@@ -91,7 +137,7 @@ uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
 
 uint32_t QKD_CONNECT_NONBLOCK(key_handle_t key_handle) {
     connection_t *conn = search_handle(key_handle);
-    
+
     if(conn == NULL) {
         return NO_QKD_CONNECTION;
     }
