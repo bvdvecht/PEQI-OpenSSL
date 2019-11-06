@@ -99,16 +99,11 @@ connection_t* search_handle(key_handle_t key_handle) {
 // }
 
 uint32_t QKD_OPEN(destination_t dest, qos_t qos, key_handle_t key_handle) {
+    //TODO we can get rid of this as we have our dict
     remote_port = dest.port;
-    printf("afhshefb remote port: %d\n", remote_port);
     requested_length = qos.requested_length;
     
     if (memcmp(zeros_array, key_handle, KEY_HANDLE_SIZE) == 0) {
-        printf("rtoiyrtfb\n");
-        
-        //TODO we can get rid of this as we have our dict
-        
-    
         //init_key_handle(&key_handle);
         for (size_t i = 0; i < KEY_HANDLE_SIZE; i++) {
             key_handle[i] = (char) (rand() % 256);
